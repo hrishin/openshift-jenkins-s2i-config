@@ -79,9 +79,7 @@ function deploy() {
 
 function updateDownstreamRepos() {
     local newVersion=${1}
-    local propertyName='jenkins-openshift.version'
-    local message="Update pom property ${propertyName} to ${newVersion}"
-
+    local message="Update Jenkins image version to ${newVersion}"
     local uid=$(python -c 'import uuid;print uuid.uuid4()')
     local branch="versionUpdate${uid}"
 
@@ -89,21 +87,20 @@ function updateDownstreamRepos() {
     git config --global user.email fabric8cd@gmail.com
 
     set +x
-    echo git clone https://XXXX@github.com/fabric8-services/fabric8-tenant-jenkins.git --depth=1 /tmp/fabric8-tenant-jenkins
-    git clone https://$(echo ${FABRIC8_HUB_TOKEN}|base64 --decode)@github.com/fabric8-services/fabric8-tenant-jenkins.git --depth=1 /tmp/fabric8-tenant-jenkins
+    echo git clone https://XXXX@github.com/fabric8-services/fabric8-tenant.git --depth=1 /tmp/fabric8-tenant
+    git clone https://$(echo ${FABRIC8_HUB_TOKEN}|base64 --decode)@github.com/fabric8-services/fabric8-tenant.git --depth=1 /tmp/fabric8-tenant
     set -x
 
-    updatescript=$(readlink -f .cico/updatePomProperty.py)
-    cd /tmp/fabric8-tenant-jenkins
+    cd /tmp/fabric8-tenant
     git checkout -b ${branch}
-    python ${updatescript} ${propertyName} ${newVersion}
+    sed -i "/- name: JENKINS_OPENSHIFT_VERSION/!b;n;c\ \ value: ${newVersion}" environment/templates/fabric8-tenant-jenkins.yml
 
-    git commit pom.xml -m "${message}"
+    git commit environment/templates/fabric8-tenant-jenkins.yml -m "${message}"
     git push -u origin ${branch}
 
     set +x
     curl -s -X POST -L -H "Authorization: token $(echo ${FABRIC8_HUB_TOKEN}|base64 --decode)" \
          -d "{\"title\": \"${message}\", \"base\":\"master\", \"head\":\"${branch}\"}" \
-         https://api.github.com/repos/fabric8-services/fabric8-tenant-jenkins/pulls
+         https://api.github.com/repos/fabric8-services/fabric8-tenant/pulls
     set -x
 }
