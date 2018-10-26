@@ -96,7 +96,7 @@ function updateDownstreamRepos() {
     sed -i "/- name: JENKINS_OPENSHIFT_VERSION/!b;n;c\ \ value: ${newVersion}" environment/templates/fabric8-tenant-jenkins.yml
 
     git commit environment/templates/fabric8-tenant-jenkins.yml -m "${message}"
-    git push -u origin ${branch}
+    git push -q -u origin ${branch}
 
     set +x
     curl -s -X POST -L -H "Authorization: token $(echo ${FABRIC8_HUB_TOKEN}|base64 --decode)" \
